@@ -1,13 +1,13 @@
+from email.mime import base
 import math
 
 import modules.scripts as scripts
 import gradio as gr
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from modules import processing, images, devices
 from modules.processing import Processed
 from modules.shared import state
-
 
 class Script(scripts.Script):
     def title(self):
@@ -23,9 +23,20 @@ class Script(scripts.Script):
         overlap = gr.Slider(minimum=0, maximum=256, step=16,
                             label='Tile overlap', value=0, visible=True)
 
-        return [tile_size, overlap]
+        tile_border_width = gr.Slider(minimum=0, maximum=256, step=1,
+                                        label='Tile border width', value=0, visible=True)
+        tile_border_color = gr.ColorPicker(label='Tile border color', visible=True)
+        return [tile_size, overlap, tile_border_width, tile_border_color]
 
-    def run(self, p, tile_size, overlap):
+    def run(self, p, tile_size, overlap, tile_border_width, tile_border_color):
+        def draw_border(img: Image, color, width):
+            if not width:
+                return img
+            drawer = ImageDraw.Draw(img)
+            shape = [(0, 0), img.size]
+            drawer.rectangle(shape, outline=color, width=width)
+            return img
+
         processing.fix_seed(p)
 
         initial_info = None
@@ -66,7 +77,6 @@ class Script(scripts.Script):
 
             if initial_info is None:
                 initial_info = processed.info
-
             work_results += processed.images if batch_size == 1 else processed.images[1:]
 
         shape = (len(grid.tiles[0][2]), len(grid.tiles))
@@ -77,10 +87,12 @@ class Script(scripts.Script):
             for col in range(shape[1]):
                 offset = p.width * col, p.height * row
                 idx = row * shape[1] + col
-                combined_image.paste(work_results[idx], offset)
+                w_res = draw_border(work_results[idx], tile_border_color, tile_border_width)
+                combined_image.paste(w_res, offset)
 
+        combined_image = draw_border(combined_image, tile_border_color, tile_border_width)
         result_images.append(combined_image)
-
+        images.save_image(combined_image, 'outputs/img2img-grids', basename='grid')
         processed = Processed(p, result_images, seed, initial_info)
 
         return processed
