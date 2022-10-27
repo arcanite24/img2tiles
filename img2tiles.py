@@ -1,4 +1,3 @@
-from email.mime import base
 import math
 
 import modules.scripts as scripts
@@ -19,16 +18,16 @@ class Script(scripts.Script):
     def ui(self, is_img2img):
         tile_size = gr.Slider(minimum=32, maximum=256, step=16,
                               label='Tile size', value=256, visible=True)
-
+        use_random_seeds = gr.Checkbox(value=False, label='Use -1 for seeds', visible=True)
         overlap = gr.Slider(minimum=0, maximum=256, step=16,
                             label='Tile overlap', value=0, visible=True)
 
         tile_border_width = gr.Slider(minimum=0, maximum=256, step=1,
                                         label='Tile border width', value=0, visible=True)
         tile_border_color = gr.ColorPicker(label='Tile border color', visible=True)
-        return [tile_size, overlap, tile_border_width, tile_border_color]
+        return [tile_size, overlap, tile_border_width, tile_border_color, use_random_seeds]
 
-    def run(self, p, tile_size, overlap, tile_border_width, tile_border_color):
+    def run(self, p, tile_size, overlap, tile_border_width, tile_border_color, use_random_seeds):
         def draw_border(img: Image, color, width):
             if not width:
                 return img
@@ -36,8 +35,10 @@ class Script(scripts.Script):
             shape = [(0, 0), img.size]
             drawer.rectangle(shape, outline=color, width=width)
             return img
-
-        processing.fix_seed(p)
+        if use_random_seeds:
+            p.seed = -1
+        else:
+            processing.fix_seed(p)
 
         initial_info = None
         seed = p.seed
