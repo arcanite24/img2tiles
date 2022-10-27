@@ -31,5 +31,8 @@
   ### Van Gogh
   ![Starry Night](examples/example4.png "Starry Night")
 
+  ### SUS
+  ![SUS](examples/example5.png "SUS")
+
   ## Credits
   Based on **sd_upscale.py**
