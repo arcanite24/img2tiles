@@ -23,13 +23,16 @@ class Script(scripts.Script):
         overlap = gr.Slider(minimum=0, maximum=256, step=16,
                             label='Tile overlap', value=0, visible=True)
 
-        return [tile_size, overlap]
+        increment_seed = gr.Checkbox(label='New seed for each tile', value=True, visible=True)
 
-    def run(self, p, tile_size, overlap):
+        return [tile_size, overlap, increment_seed]
+
+    def run(self, p, tile_size, overlap, increment_seed):
         processing.fix_seed(p)
 
         initial_info = None
         seed = p.seed
+        
 
         init_img = p.init_images[0]
         img = init_img
@@ -62,6 +65,9 @@ class Script(scripts.Script):
             p.init_images = work[i*batch_size:(i+1)*batch_size]
 
             state.job = f"Batch {i + 1 * batch_count} out of {state.job_count}"
+            if increment_seed is True:
+                p.seed = p.seed + 1
+
             processed = processing.process_images(p)
 
             if initial_info is None:
